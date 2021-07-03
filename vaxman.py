@@ -2,6 +2,8 @@
 #https://github.com/hbokmann/Pacman
   
 import pygame
+from pygame import time
+from pygame.constants import USEREVENT
   
 black = (0,0,0)
 white = (255,255,255)
@@ -11,8 +13,8 @@ red = (255,0,0)
 purple = (255,0,255)
 yellow   = ( 255, 255,   0)
 
-Trollicon=pygame.image.load('images/Trollman.png')
-pygame.display.set_icon(Trollicon)
+Pacman=pygame.image.load('images/pacman.png')
+pygame.display.set_icon(Pacman)
 
 #Add music
 # pygame.mixer.init()
@@ -220,6 +222,7 @@ class Ghost(Player):
         return [turn,steps]
       except IndexError:
          return [0,0]
+      
 
 Pinky_directions = [
 [0,-30,4],
@@ -334,7 +337,7 @@ cl = len(Clyde_directions)-1
 
 # Call this function so the Pygame library can initialize itself
 pygame.init()
-  
+
 # Create an 606x606 sized screen
 screen = pygame.display.set_mode([606, 606])
 
@@ -449,6 +452,9 @@ def startGame():
 
   i = 0
 
+  current_time = 0
+  time_since_eat = 0
+
   while done == False:
       # ALL EVENT PROCESSING SHOULD GO BELOW THIS COMMENT
       for event in pygame.event.get():
@@ -474,6 +480,8 @@ def startGame():
                   Pacman.changespeed(0,30)
               if event.key == pygame.K_DOWN:
                   Pacman.changespeed(0,-30)
+
+      current_time = pygame.time.get_ticks()
           
       # ALL EVENT PROCESSING SHOULD GO ABOVE THIS COMMENT
    
@@ -527,15 +535,28 @@ def startGame():
       if score == bll:
         doNext("Congratulations, you won!",145,all_sprites_list,block_list,monsta_list,pacman_collide,wall_list,gate)
 
-      monsta_hit_list = pygame.sprite.spritecollide(Pacman, monsta_list, False)
+      def multiplyGhost(current_time, time_since_eat):
+          new_monstas = monsta_list.copy()
+          monsta_list.add(new_monstas)
+          print("mulitplied ghost!")
 
+      # constantly checking for when the difference becomes 2000 if then make new monstas
+      # PROBLEM: as long as the diffence is above 2000, it constantly runs the muliplyGhost function
+      if current_time - time_since_eat > 2000:
+        multiplyGhost(current_time, time_since_eat)
+
+      # kill monsta if pacman collides
+      monsta_hit_list = pygame.sprite.spritecollide(Pacman, monsta_list, True)
+      
+      # when monsta gets killed get time and check if 30 seconds has passed since last monsta kill, if so multiply monstas  
       if monsta_hit_list:
-        doNext("Game Over",235,all_sprites_list,block_list,monsta_list,pacman_collide,wall_list,gate)
+        time_since_eat = pygame.time.get_ticks()
 
       # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
       
       pygame.display.flip()
-    
+
+      print(f"current time: {current_time} time since eat: {time_since_eat}")
       clock.tick(10)
 
 def doNext(message,left,all_sprites_list,block_list,monsta_list,pacman_collide,wall_list,gate):
